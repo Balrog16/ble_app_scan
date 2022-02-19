@@ -163,7 +163,10 @@ static void ble_stack_init(void)
  */
 static void scan_start(void)
 {
+    
     NRF_LOG_INFO("/****  Starting scan ****/");
+   // address_list[MAX_ADDRESS_COUNT][BLE_GAP_ADDR_LEN] = {0};
+    memset(&address_list, 0, sizeof(address_list));
     APP_ERROR_CHECK(nrf_ble_scan_start(&m_scan));
 }
 
@@ -236,8 +239,10 @@ int main(void)
     scan_init();
 
     // Start execution.
-    NRF_LOG_INFO("Start scan");
+    NRF_LOG_INFO("------------------------------------------");
+    NRF_LOG_INFO("--------------Start scan------------------");
     scan_start();
+    
 
     // Enter main loop.
     for (;;)
