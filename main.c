@@ -47,6 +47,8 @@
 #include "nrf_log_default_backends.h"
 #include "nrf_ble_scan.h"
 #include "ble_advdata.h"
+#include "app_timer.h"
+#include "nrf_gpio.h"
 
 #define APP_BLE_CONN_CFG_TAG 1      /**< A tag identifying the SoftDevice BLE configuration. */
 #define SCAN_DURATION_WITELIST 5000 /**< Duration of the scanning in units of 10 milliseconds. */
@@ -167,6 +169,7 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
     switch (p_ble_evt->header.evt_id)
     {
     case BLE_GAP_EVT_CONNECTED:
+        nrf_gpio_pin_clear(29);
         NRF_LOG_INFO("Connected!!");
         break;
     case BLE_GAP_EVT_DISCONNECTED:
@@ -265,6 +268,7 @@ static void scan_evt_handler(scan_evt_t const *p_scan_evt)
         print_address(p_scan_evt->params.filter_match.p_adv_report);
         print_manufacturer_data(p_scan_evt->params.filter_match.p_adv_report);
         // Connect Now
+        nrf_gpio_pin_set(29);
         ret_code_t err_code = sd_ble_gap_connect(&p_scan_evt->params.filter_match.p_adv_report->peer_addr,
                                                  &m_scan_param,
                                                  &m_conn_param,
@@ -299,12 +303,16 @@ int main(void)
 {
     ret_code_t err_code;
 
+    nrf_gpio_cfg_output(29);
     err_code = NRF_LOG_INIT(NULL);
     APP_ERROR_CHECK(err_code);
     NRF_LOG_DEFAULT_BACKENDS_INIT();
 
     ble_stack_init();
     scan_init();
+
+
+    
 
     // Start execution.
     NRF_LOG_INFO("------------------------------------------");
