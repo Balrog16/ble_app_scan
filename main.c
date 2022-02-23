@@ -9,6 +9,7 @@
 #include "nrf_pwr_mgmt.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_ble.h"
+#include "ble_advdata.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -20,8 +21,11 @@
   3 /**< BLE observer priority of the application. There is no need to modify  \
        this value. */
 
-#define SCAN_WINDOW MSEC_TO_UNITS(5, UNIT_0_625_MS)   /** SCAN WINDOW **/
-#define SCAN_INTERVAL MSEC_TO_UNITS(5, UNIT_0_625_MS) /** SCAN Interval **/
+//#define SCAN_WINDOW MSEC_TO_UNITS(5, UNIT_0_625_MS)   /** SCAN WINDOW **/
+//#define SCAN_INTERVAL MSEC_TO_UNITS(5, UNIT_0_625_MS) /** SCAN Interval **/
+
+#define DEV_NAME_LEN ((BLE_GAP_ADV_SET_DATA_SIZE_MAX + 1) - \
+                      AD_DATA_OFFSET) /**< Determines the device name length. */
 
 NRF_BLE_SCAN_DEF(m_scan); /**< Scanning Module instance. */
 // Scan parameters requested for scanning
@@ -29,24 +33,70 @@ static ble_gap_scan_params_t const m_scan_param = {
     .extended = 1,  // Ready for exended advertisements and so receive adv
                     // packets on secondary adv channels
     .active = 0x01, // Decide to send a scan request or not (0x01)
-    .interval = SCAN_INTERVAL,
-    .window = SCAN_WINDOW,
+    .interval = NRF_BLE_SCAN_SCAN_INTERVAL,
+    .window = NRF_BLE_SCAN_SCAN_WINDOW,
     .timeout = 0x0000, // No timeout, scan forever!!
     .scan_phys = BLE_GAP_PHY_1MBPS,
     .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL, // No filters
 };
 
+void print_address(const ble_gap_evt_adv_report_t *p_adv_report)
+{
+    NRF_LOG_INFO("addr: %02x:%02x:%02x:%02x:%02x:%02x",
+                 p_adv_report->peer_addr.addr[5],
+                 p_adv_report->peer_addr.addr[4],
+                 p_adv_report->peer_addr.addr[3],
+                 p_adv_report->peer_addr.addr[2],
+                 p_adv_report->peer_addr.addr[1],
+                 p_adv_report->peer_addr.addr[0]);
+}
+
+void print_name(const ble_gap_evt_adv_report_t *p_adv_report, char *pName)
+{
+    uint16_t offset = 0;
+
+    uint16_t length = ble_advdata_search(p_adv_report->data.p_data, p_adv_report->data.len, &offset, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME);
+    if (length == 0)
+    {
+        // Look for the short local name if it was not found as complete.
+        length = ble_advdata_search(p_adv_report->data.p_data, p_adv_report->data.len, &offset, BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME);
+    }
+
+    if (length != 0)
+    {
+        memcpy(pName, &p_adv_report->data.p_data[offset], length);
+        NRF_LOG_INFO("name: %s", nrf_log_push(pName));
+    }
+    else
+    {
+        strcpy(pName, "No-Name");
+        NRF_LOG_INFO("name: %s", nrf_log_push(pName));
+    }
+}
+
+
 /**@brief Function for handling Scanning Module events.
  */
 static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
 
-  switch (p_scan_evt->scan_evt_id) {
-    case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT:
+  if(p_scan_evt->scan_evt_id == NRF_BLE_SCAN_EVT_SCAN_TIMEOUT) {
+  
       NRF_LOG_INFO("Scan event timed-out");
-      break;
-    default:
-      break;
+ 
   }
+  else{
+
+    NRF_LOG_INFO("    ");
+    NRF_LOG_INFO("    ");
+    print_address(p_scan_evt->params.filter_match.p_adv_report);
+    char name[DEV_NAME_LEN] = {0};
+    print_name(p_scan_evt->params.filter_match.p_adv_report, name);
+    NRF_LOG_INFO("rssi: %d", p_scan_evt->params.filter_match.p_adv_report->rssi);
+    //print_manufacturer_data(p_scan_evt->params.filter_match.p_adv_report);
+    NRF_LOG_INFO("    ");
+    NRF_LOG_INFO("    ");
+  }
+
 }
 
 /**@brief Function to start scanning. */
@@ -55,7 +105,7 @@ static void scan_start(void) {
 
   ret = nrf_ble_scan_start(&m_scan); // Start Scan
   APP_ERROR_CHECK(ret);
-
+  NRF_LOG_INFO("****Scan Started****");
   ret = bsp_indication_set(BSP_INDICATE_SCANNING); // blink LED
   APP_ERROR_CHECK(ret);
 }
@@ -154,9 +204,18 @@ int main(void) {
   log_init();
   timer_init();
   power_management_init();
-
+  NRF_LOG_INFO("BLE Init");
   /** BLE stack and other related worl **/
   ble_stack_init();
   scan_init();
   scan_start();
+
+   // Enter main loop.
+   for (;;)
+   {
+      NRF_LOG_FLUSH();
+      __WFI();
+      __SEV();
+      __WFE();
+   }
 }
