@@ -21,8 +21,8 @@
   3 /**< BLE observer priority of the application. There is no need to modify  \
        this value. */
 
-//#define SCAN_WINDOW MSEC_TO_UNITS(5, UNIT_0_625_MS)   /** SCAN WINDOW **/
-//#define SCAN_INTERVAL MSEC_TO_UNITS(5, UNIT_0_625_MS) /** SCAN Interval **/
+#define SCAN_WINDOW MSEC_TO_UNITS(5, UNIT_0_625_MS)   /** SCAN WINDOW **/
+#define SCAN_INTERVAL MSEC_TO_UNITS(5, UNIT_0_625_MS) /** SCAN Interval **/
 
 #define DEV_NAME_LEN ((BLE_GAP_ADV_SET_DATA_SIZE_MAX + 1) - \
                       AD_DATA_OFFSET) /**< Determines the device name length. */
@@ -33,9 +33,9 @@ static ble_gap_scan_params_t const m_scan_param = {
     .extended = 1,  // Ready for exended advertisements and so receive adv
                     // packets on secondary adv channels
     .active = 0x01, // Decide to send a scan request or not (0x01)
-    .interval = NRF_BLE_SCAN_SCAN_INTERVAL,
-    .window = NRF_BLE_SCAN_SCAN_WINDOW,
-    .timeout = 0x0000, // No timeout, scan forever!!
+    .interval = SCAN_INTERVAL,
+    .window = SCAN_WINDOW,
+    .timeout = 500, // 0x000 No timeout, scan forever!!
     .scan_phys = BLE_GAP_PHY_1MBPS,
     .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL, // No filters
 };
@@ -74,31 +74,6 @@ void print_name(const ble_gap_evt_adv_report_t *p_adv_report, char *pName)
     }
 }
 
-
-/**@brief Function for handling Scanning Module events.
- */
-static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
-
-  if(p_scan_evt->scan_evt_id == NRF_BLE_SCAN_EVT_SCAN_TIMEOUT) {
-  
-      NRF_LOG_INFO("Scan event timed-out");
- 
-  }
-  else{
-
-    NRF_LOG_INFO("    ");
-    NRF_LOG_INFO("    ");
-    print_address(p_scan_evt->params.filter_match.p_adv_report);
-    char name[DEV_NAME_LEN] = {0};
-    print_name(p_scan_evt->params.filter_match.p_adv_report, name);
-    NRF_LOG_INFO("rssi: %d", p_scan_evt->params.filter_match.p_adv_report->rssi);
-    //print_manufacturer_data(p_scan_evt->params.filter_match.p_adv_report);
-    NRF_LOG_INFO("    ");
-    NRF_LOG_INFO("    ");
-  }
-
-}
-
 /**@brief Function to start scanning. */
 static void scan_start(void) {
   ret_code_t ret;
@@ -109,6 +84,35 @@ static void scan_start(void) {
   ret = bsp_indication_set(BSP_INDICATE_SCANNING); // blink LED
   APP_ERROR_CHECK(ret);
 }
+
+
+/**@brief Function for handling Scanning Module events.
+ */
+static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
+
+  if(p_scan_evt->scan_evt_id == NRF_BLE_SCAN_EVT_SCAN_TIMEOUT) {
+  
+      NRF_LOG_INFO("Scan event timed-out");
+     // scan_start(); //Start again
+  }
+  else{
+
+    NRF_LOG_INFO("    ");
+    NRF_LOG_INFO("    ");
+    print_address(p_scan_evt->params.filter_match.p_adv_report);
+    char name[DEV_NAME_LEN] = {0};
+    print_name(p_scan_evt->params.filter_match.p_adv_report, name);
+    NRF_LOG_INFO("rssi: %d", p_scan_evt->params.filter_match.p_adv_report->rssi);
+    const ble_gap_evt_adv_report_t *p_adv_report = p_scan_evt->params.filter_match.p_adv_report;
+    NRF_LOG_INFO("Phy Primary: %d", p_adv_report->primary_phy);
+    NRF_LOG_INFO("Phy Secondary: %d", p_adv_report->secondary_phy);
+    //print_manufacturer_data(p_scan_evt->params.filter_match.p_adv_report);
+    NRF_LOG_INFO("    ");
+    NRF_LOG_INFO("    ");
+  }
+
+}
+
 
 /**@brief Function for intializing scan.
  *
@@ -137,7 +141,7 @@ void scan_init() {
 static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
   // GAP EVTS can be found here
   // https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.s110.api.v8.0.0%2Fgroup___b_l_e___g_a_p.html
-  ret_code_t err_code;
+ // ret_code_t err_code;
   switch (p_ble_evt->header.evt_id) {
   case BLE_GAP_EVT_ADV_REPORT:
     // This event is triggered as sooon as the scanner receives an advertisement
@@ -145,8 +149,8 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
     // https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.2.0%2Flib_ble_scan.html
     NRF_LOG_INFO("Advertisement received");
     //  If this event is caught here, then nrf_ble_scan_start has to be called
-    err_code = nrf_ble_scan_start(&m_scan); // Start Scan
-    APP_ERROR_CHECK(err_code);
+   // err_code = nrf_ble_scan_start(&m_scan); // Start Scan
+    //APP_ERROR_CHECK(err_code);
     break;
   default:
     break;
