@@ -104,9 +104,23 @@ static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
     print_name(p_scan_evt->params.filter_match.p_adv_report, name);
     NRF_LOG_INFO("rssi: %d", p_scan_evt->params.filter_match.p_adv_report->rssi);
     const ble_gap_evt_adv_report_t *p_adv_report = p_scan_evt->params.filter_match.p_adv_report;
+    const ble_data_t adv_data= p_adv_report->data;
+    const ble_gap_adv_report_type_t  adv_type = p_adv_report->type;
+
     NRF_LOG_INFO("Phy Primary: %d", p_adv_report->primary_phy);
     NRF_LOG_INFO("Phy Secondary: %d", p_adv_report->secondary_phy);
-    //print_manufacturer_data(p_scan_evt->params.filter_match.p_adv_report);
+    NRF_LOG_INFO("ADV Data length in bytes: %d",adv_data.len);
+
+    /** Properties **/
+    NRF_LOG_INFO("Is peripheral connectable? : %d",adv_type.connectable);
+    NRF_LOG_INFO("Is peripheral scannable? : %d",adv_type.scannable);
+    NRF_LOG_INFO("Is the advertisement directed? : %d",adv_type.directed);
+    NRF_LOG_INFO("Is there a scan response? : %d",adv_type.scan_response);
+    NRF_LOG_INFO("Is it an extended adv? : %d",adv_type.extended_pdu);
+
+    /*--A lot more information on parsing advertisements--*/
+    //https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.0.0%2Fgroup__ble__sdk__lib__advdata.html
+    
     NRF_LOG_INFO("    ");
     NRF_LOG_INFO("    ");
   }
