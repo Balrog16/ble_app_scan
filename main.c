@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+
 #define APP_BLE_CONN_CFG_TAG                                                   \
   1 /**< Tag that refers to the BLE stack configuration set with @ref          \
        sd_ble_cfg_set. The default tag is @ref BLE_CONN_CFG_TAG_DEFAULT. */
@@ -22,7 +23,7 @@
        this value. */
 
 #define SCAN_WINDOW MSEC_TO_UNITS(5, UNIT_0_625_MS)   /** SCAN WINDOW **/
-#define SCAN_INTERVAL MSEC_TO_UNITS(5, UNIT_0_625_MS) /** SCAN Interval **/
+#define SCAN_INTERVAL MSEC_TO_UNITS(125, UNIT_0_625_MS) /** SCAN Interval **/
 
 #define DEV_NAME_LEN ((BLE_GAP_ADV_SET_DATA_SIZE_MAX + 1) - \
                       AD_DATA_OFFSET) /**< Determines the device name length. */
@@ -35,7 +36,7 @@ static ble_gap_scan_params_t const m_scan_param = {
     .active = 0x01, // Decide to send a scan request or not (0x01)
     .interval = SCAN_INTERVAL,
     .window = SCAN_WINDOW,
-    .timeout = 500, // 0x000 No timeout, scan forever!!
+    .timeout = 1000, // 0x000 No timeout, scan forever!!
     .scan_phys = BLE_GAP_PHY_1MBPS,
     .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL, // No filters
 };
@@ -97,30 +98,36 @@ static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
   }
   else{
 
-    NRF_LOG_INFO("    ");
-    NRF_LOG_INFO("    ");
-    print_address(p_scan_evt->params.filter_match.p_adv_report);
     char name[DEV_NAME_LEN] = {0};
     print_name(p_scan_evt->params.filter_match.p_adv_report, name);
-    NRF_LOG_INFO("rssi: %d", p_scan_evt->params.filter_match.p_adv_report->rssi);
-    const ble_gap_evt_adv_report_t *p_adv_report = p_scan_evt->params.filter_match.p_adv_report;
-    const ble_data_t adv_data= p_adv_report->data;
-    const ble_gap_adv_report_type_t  adv_type = p_adv_report->type;
-
-    NRF_LOG_INFO("Phy Primary: %d", p_adv_report->primary_phy);
-    NRF_LOG_INFO("Phy Secondary: %d", p_adv_report->secondary_phy);
-    NRF_LOG_INFO("ADV Data length in bytes: %d",adv_data.len);
-
-    /** Properties **/
-    NRF_LOG_INFO("Is peripheral connectable? : %d",adv_type.connectable);
-    NRF_LOG_INFO("Is peripheral scannable? : %d",adv_type.scannable);
-    NRF_LOG_INFO("Is the advertisement directed? : %d",adv_type.directed);
-    NRF_LOG_INFO("Is there a scan response? : %d",adv_type.scan_response);
-    NRF_LOG_INFO("Is it an extended adv? : %d",adv_type.extended_pdu);
-
-    /*--A lot more information on parsing advertisements--*/
-    //https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.0.0%2Fgroup__ble__sdk__lib__advdata.html
     
+    if(strcmp(name, "Tiberius")==0){
+        //if name matches any of the devices of interest, then print
+        NRF_LOG_INFO("    ");
+        NRF_LOG_INFO("    ");
+        NRF_LOG_INFO("Whitelisted device: %s", nrf_log_push(name));
+        print_address(p_scan_evt->params.filter_match.p_adv_report);
+        NRF_LOG_INFO("rssi: %d", p_scan_evt->params.filter_match.p_adv_report->rssi);
+        const ble_gap_evt_adv_report_t *p_adv_report = p_scan_evt->params.filter_match.p_adv_report;
+        const ble_data_t adv_data= p_adv_report->data;
+        const ble_gap_adv_report_type_t  adv_type = p_adv_report->type;
+
+        NRF_LOG_INFO("Phy Primary: %d", p_adv_report->primary_phy);
+        NRF_LOG_INFO("Phy Secondary: %d", p_adv_report->secondary_phy);
+        NRF_LOG_INFO("ADV Data length in bytes: %d",adv_data.len);
+
+        /** Properties **/
+        NRF_LOG_INFO("Is peripheral connectable? : %d",adv_type.connectable);
+        NRF_LOG_INFO("Is peripheral scannable? : %d",adv_type.scannable);
+        NRF_LOG_INFO("Is the advertisement directed? : %d",adv_type.directed);
+        NRF_LOG_INFO("Is there a scan response? : %d",adv_type.scan_response);
+        NRF_LOG_INFO("Is it an extended adv? : %d",adv_type.extended_pdu);
+
+        /*--A lot more information on parsing advertisements--*/
+        //https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.0.0%2Fgroup__ble__sdk__lib__advdata.html
+        
+        //end if here
+    }
     NRF_LOG_INFO("    ");
     NRF_LOG_INFO("    ");
   }
@@ -161,7 +168,7 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context) {
     // This event is triggered as sooon as the scanner receives an advertisement
     // packet More information on scanning -
     // https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.2.0%2Flib_ble_scan.html
-    NRF_LOG_INFO("Advertisement received");
+    //NRF_LOG_INFO("Advertisement received");
     //  If this event is caught here, then nrf_ble_scan_start has to be called
    // err_code = nrf_ble_scan_start(&m_scan); // Start Scan
     //APP_ERROR_CHECK(err_code);
