@@ -41,6 +41,15 @@ static ble_gap_scan_params_t const m_scan_param = {
     .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL, // No filters
 };
 
+bool string_in(const char* string, const char** strings, size_t strings_num) {
+    for (size_t i = 0; i < strings_num; i++) {
+        if (!strcmp(string, strings[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void print_address(const ble_gap_evt_adv_report_t *p_adv_report)
 {
     NRF_LOG_INFO("addr: %02x:%02x:%02x:%02x:%02x:%02x",
@@ -100,8 +109,8 @@ static void scan_evt_handler(scan_evt_t const *p_scan_evt) {
 
     char name[DEV_NAME_LEN] = {0};
     print_name(p_scan_evt->params.filter_match.p_adv_report, name);
-    
-    if(strcmp(name, "Tiberius")==0){
+    const char* strDevList[] = {"TestDev", "Tiberius", "SDA-RTU-Wireless"};
+    if(string_in(name, strDevList, 3)){
         //if name matches any of the devices of interest, then print
         NRF_LOG_INFO("    ");
         NRF_LOG_INFO("    ");
